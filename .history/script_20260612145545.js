@@ -125,7 +125,7 @@ const MEMORIES = [
     photo: 'no-play_31-05-2026.jpeg', caption: 'Um dia de diversão juntos ♡',
   },
   {
-    id: 'formatura', date: '2025-07-01', iso: '2025-07-01', label: 'Nossa Formatura ✦',
+    id: 'formatura', date: 'Data Especial', iso: '2025-07-01', label: 'Nossa Formatura ✦',
     event: 'Nossa Formatura',
     question: 'O que comemoramos todos juntos? 🎓',
     answers: ['formatura', 'formou', 'formados', 'colação', 'colacao', 'beca', 'diploma', 'formamos', 'formei'],
@@ -133,7 +133,7 @@ const MEMORIES = [
     photo: 'nossa-formatura.jpeg', caption: 'Nossa formatura ♡',
   },
   {
-    id: 'maracana', date: '2025-09-01', iso: '2025-09-01', label: 'Primeira Vez no Maracanã ✦',
+    id: 'maracana', date: 'Data Especial', iso: '2025-09-01', label: 'Primeira Vez no Maracanã ✦',
     event: 'Primeira Vez no Maracanã',
     question: 'Que estádio icônico visitamos pela primeira vez? ⚽',
     answers: ['maracanã', 'maracana', 'futebol', 'jogo', 'estádio', 'estadio', 'flamengo', 'fluminense', 'vasco', 'botafogo'],
@@ -254,7 +254,6 @@ let pulseAnimId  = null;
 let pulseConst   = null;
 let pulseStart   = 0;
 let lastSkyLst   = 0;        // LST da última renderização (usado no pulso)
-let revealOpenTime = 0;      // timestamp de quando o reveal foi aberto (evita clique residual)
 
 // ══════════════════════════════════════════════════════════════
 //  REFS DOM
@@ -413,7 +412,6 @@ function checkAnswer() {
 // ══════════════════════════════════════════════════════════════
 function openReveal(mem) {
   revealMemory = mem;
-  revealOpenTime = Date.now();
   constMsgIndex = 0;
   hideConstellationCard();
 
@@ -845,7 +843,7 @@ function handleSkyClick(e) {
   if (hit) {
     spawnSparkleBurst(mx, my);
     showConstellationCard(hit.name);
-  } else if (Date.now() - revealOpenTime >= 600) {
+  } else {
     revealPhoto();
   }
 }
