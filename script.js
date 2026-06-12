@@ -620,13 +620,18 @@ function project(alt, az, cx, cy, R) {
   return { x: cx + r * Math.sin(z), y: cy - r * Math.cos(z) };
 }
 
+function skyR(W, H) {
+  // Em portrait o círculo deve caber na largura; em landscape usa a altura
+  return H > W ? W * 0.46 : Math.min(W, H) * 0.84;
+}
+
 function renderSky(iso) {
   const canvas = dom.skyCanvas;
   const W = canvas.width  = window.innerWidth;
   const H = canvas.height = window.innerHeight;
   const ctx = canvas.getContext('2d');
   const CX = W / 2, CY = H / 2;
-  const R  = Math.min(W, H) * 0.84;
+  const R  = skyR(W, H);
 
   const [year, month, day] = iso.split('-').map(Number);
   // hour=0 BRT = 03h UTC do mesmo dia (meia-noite local)
@@ -717,7 +722,7 @@ function renderSky(iso) {
     const p = toAltAz(ra, dec, lst, SKY.lat);
     if (p.alt < 4) return;
     const { x, y } = project(p.alt, p.az, CX, CY, R);
-    if (x < 20 || x > W - 20 || y < 20 || y > H - 20) return;
+    if (x < 8 || x > W - 8 || y < 8 || y > H - 8) return;
 
     // Anel sutil indicando área clicável
     ctx.beginPath();
@@ -950,7 +955,7 @@ function pulseTick() {
   ctx.clearRect(0, 0, W, H);
 
   const CX = W / 2, CY = H / 2;
-  const R  = Math.min(W, H) * 0.84;
+  const R  = skyR(W, H);
   const t  = (performance.now() - pulseStart) / 1000;
 
   (CONST_STAR_INDICES[pulseConst] || []).forEach(i => {
