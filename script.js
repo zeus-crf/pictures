@@ -125,7 +125,7 @@ const MEMORIES = [
     photo: 'no-play_31-05-2026.jpeg', caption: 'Um dia de diversão juntos ♡',
   },
   {
-    id: 'formatura', date: '2025-07-01', iso: '2025-07-01', label: 'Nossa Formatura ✦',
+    id: 'formatura', date: '01/07/2025', iso: '2025-07-01', label: '1 de Julho de 2025',
     event: 'Nossa Formatura',
     question: 'O que comemoramos todos juntos? 🎓',
     answers: ['formatura', 'formou', 'formados', 'colação', 'colacao', 'beca', 'diploma', 'formamos', 'formei'],
@@ -133,7 +133,7 @@ const MEMORIES = [
     photo: 'nossa-formatura.jpeg', caption: 'Nossa formatura ♡',
   },
   {
-    id: 'maracana', date: '2025-09-01', iso: '2025-09-01', label: 'Primeira Vez no Maracanã ✦',
+    id: 'maracana', date: '01/09/2025', iso: '2025-09-01', label: '1 de Setembro de 2025',
     event: 'Primeira Vez no Maracanã',
     question: 'Que estádio icônico visitamos pela primeira vez? ⚽',
     answers: ['maracanã', 'maracana', 'futebol', 'jogo', 'estádio', 'estadio', 'flamengo', 'fluminense', 'vasco', 'botafogo'],
