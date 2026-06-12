@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Você se Lembra? 💕</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Caveat:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <canvas id="stars-canvas" aria-hidden="true"></canvas>
+
+  <!-- ── TELA PRINCIPAL ── -->
+  <main id="main">
+    <header class="site-header">
+      <span class="header-icon" aria-hidden="true">🌹</span>
+      <h1>Você se Lembra?</h1>
+      <p class="header-sub">uma viagem pelas nossas memórias</p>
+    </header>
+
+    <div class="counter">
+      💕 &nbsp;<span id="unlocked-count">0</span> de <span id="total-count">0</span> memórias reveladas
+    </div>
+
+    <ol class="timeline" id="timeline" aria-label="Linha do tempo de memórias"></ol>
+
+    <button class="reset-btn" id="reset-btn" title="Apagar progresso e recomeçar">↺ resetar tudo</button>
+  </main>
+
+  <!-- ── QUIZ MODAL ── -->
+  <div
+    id="quiz-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="quiz-question"
+  >
+    <div id="quiz-box">
+      <button class="quiz-close" id="quiz-close-btn" aria-label="Fechar">✕</button>
+      <div class="quiz-date-badge">✦ &nbsp;<span id="quiz-date-text"></span>&nbsp; ✦</div>
+      <p class="quiz-question" id="quiz-question"></p>
+      <input
+        type="text"
+        id="quiz-input"
+        class="quiz-input"
+        placeholder="sua resposta..."
+        autocomplete="off"
+        aria-label="Campo de resposta"
+      />
+      <button class="quiz-submit" id="quiz-submit-btn">Revelar &nbsp;✦</button>
+      <p class="quiz-feedback" id="quiz-feedback" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <!-- ── TELA DE REVELAÇÃO ── -->
+  <div id="reveal-overlay" aria-live="assertive">
+
+    <!-- Céu astronômico renderizado por canvas -->
+    <canvas id="sky-canvas" aria-hidden="true"></canvas>
+
+    <!-- Partículas decorativas -->
+    <div class="reveal-particles" id="reveal-particles" aria-hidden="true"></div>
+
+    <!-- Botão voltar (sempre visível) -->
+    <button class="reveal-back-btn" id="reveal-back-btn">← mais memórias</button>
+
+    <!-- Canvas para animação de pulso das constelações -->
+    <canvas id="constellation-canvas" aria-hidden="true"></canvas>
+
+    <!-- Card emocional ao clicar em constelação -->
+    <div class="const-card" id="const-card" role="dialog" aria-live="polite">
+      <div class="const-card-header">
+        <span class="const-card-constellation" id="const-card-constellation"></span>
+      </div>
+      <div class="const-card-event" id="const-card-event"></div>
+      <p class="const-card-message" id="const-card-message"></p>
+      <div class="const-card-date" id="const-card-date"></div>
+      <div class="const-card-progress" id="const-card-progress"></div>
+    </div>
+
+    <!-- Estado 1: dica para tocar no céu -->
+    <div class="sky-hint" id="sky-hint">
+      <span>✦ toque no céu para revelar ✦</span>
+    </div>
+
+    <!-- Estado 2: foto + info (aparece após toque) -->
+    <div class="reveal-content" id="reveal-content">
+      <p class="reveal-sky-label">✦ O Céu em <span id="reveal-sky-date"></span> ✦</p>
+
+      <div class="reveal-photo-card">
+        <img id="reveal-photo-img" src="" alt="" />
+      </div>
+
+      <p class="reveal-event"  id="reveal-event"></p>
+      <p class="reveal-date"   id="reveal-date"></p>
+      <p class="reveal-caption" id="reveal-caption"></p>
+
+      <button class="reveal-btn-back" id="reveal-btn-back-bottom">← mais memórias</button>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

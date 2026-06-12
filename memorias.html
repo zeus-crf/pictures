@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Você se Lembra? 💕</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --rose:#c9728a; --rose-light:#f2c4ce; --purple:#9b70d0;
+  --dark:#06030f; --card-bg:rgba(14,8,32,0.92); --border:rgba(200,160,255,0.15);
+}
+body { background:var(--dark); min-height:100vh; font-family:'Playfair Display',serif;
+  display:flex; flex-direction:column; align-items:center; overflow-x:hidden; }
+#stars-canvas { position:fixed; inset:0; pointer-events:none; z-index:0; }
+#main { position:relative; z-index:1; width:100%; max-width:680px;
+  padding:40px 20px 60px; display:flex; flex-direction:column; align-items:center; gap:32px; }
+.header { text-align:center; }
+.header-icon { font-size:42px; display:block; margin-bottom:14px; animation:float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.header h1 { font-size:38px; font-style:italic; color:#e8d0ff;
+  text-shadow:0 0 40px rgba(200,140,255,0.5); line-height:1.2; margin-bottom:8px; }
+.header p { font-family:'Caveat',cursive; font-size:18px; color:rgba(200,180,255,0.45); letter-spacing:.5px; }
+.counter { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.04);
+  border:1px solid var(--border); border-radius:50px; padding:8px 20px;
+  font-family:'Caveat',cursive; font-size:16px; color:rgba(200,180,255,0.5); }
+.counter span { color:#e0c8ff; font-weight:600; }
+.select-wrap { width:100%; position:relative; }
+.select-wrap::after { content:'▾'; position:absolute; right:18px; top:50%;
+  transform:translateY(-50%); color:rgba(200,160,255,0.5); pointer-events:none; font-size:18px; }
+#dateSelect { width:100%; background:var(--card-bg); border:1px solid var(--border);
+  border-radius:16px; padding:18px 48px 18px 22px; color:rgba(220,200,255,0.8);
+  font-family:'Playfair Display',serif; font-size:17px; font-style:italic;
+  appearance:none; cursor:pointer; outline:none; transition:border-color .3s,box-shadow .3s; }
+#dateSelect:focus,#dateSelect:hover { border-color:rgba(200,160,255,0.4); box-shadow:0 0 20px rgba(160,100,255,0.12); }
+#dateSelect option { background:#0e0820; color:#ddd; font-style:normal; }
+.memories-title { width:100%; text-align:center; font-family:'Caveat',cursive;
+  font-size:15px; color:rgba(200,180,255,0.3); letter-spacing:2px; text-transform:uppercase; display:none; }
+.memories-title.show { display:block; }
+#grid { width:100%; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+.mem-card { background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
+  overflow:hidden; cursor:pointer; transition:transform .25s,box-shadow .25s; animation:fadeIn .5s ease; }
+@keyframes fadeIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+.mem-card:hover { transform:scale(1.04); box-shadow:0 6px 24px rgba(160,100,255,0.2); }
+.mem-card img { width:100%; aspect-ratio:1; object-fit:cover; display:block; filter:saturate(0.9); }
+.mem-card-info { padding:10px 12px; }
+.mem-card-title { font-size:13px; color:rgba(220,200,255,0.85); line-height:1.3; margin-bottom:4px; }
+.mem-card-date { font-family:'Caveat',cursive; font-size:12px; color:rgba(200,180,255,0.4); }
+
+/* ── QUIZ MODAL ── */
+#quiz-overlay { position:fixed; inset:0; background:rgba(6,3,15,0.82); backdrop-filter:blur(8px);
+  z-index:100; display:flex; align-items:center; justify-content:center; padding:20px;
+  opacity:0; pointer-events:none; transition:opacity .35s; }
+#quiz-overlay.show { opacity:1; pointer-events:all; }
+#quiz-box { background:rgba(10,5,26,0.96); border:1px solid var(--border); border-radius:24px;
+  padding:36px 32px; max-width:440px; width:100%; text-align:center;
+  box-shadow:0 0 60px rgba(140,80,255,0.2),inset 0 0 40px rgba(140,80,255,0.04);
+  transform:scale(0.92); transition:transform .35s cubic-bezier(0.34,1.56,0.64,1); position:relative; }
+#quiz-overlay.show #quiz-box { transform:scale(1); }
+.quiz-date-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(200,160,255,0.07);
+  border:1px solid rgba(200,160,255,0.14); border-radius:50px; padding:5px 16px;
+  font-family:'Caveat',cursive; font-size:14px; letter-spacing:1.5px;
+  color:rgba(200,180,255,0.55); margin-bottom:20px; }
+.quiz-question { font-size:22px; font-style:italic; color:#e0d0ff; line-height:1.45;
+  margin-bottom:24px; text-shadow:0 0 20px rgba(200,160,255,0.2); }
+#quiz-input { width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:12px; padding:14px 18px; color:rgba(220,200,255,0.9);
+  font-family:'Playfair Display',serif; font-size:16px; text-align:center;
+  outline:none; transition:border-color .3s,box-shadow .3s; margin-bottom:16px; }
+#quiz-input:focus { border-color:rgba(200,160,255,0.4); box-shadow:0 0 16px rgba(160,100,255,0.12); }
+#quiz-input.shake { animation:shake .4s ease; border-color:rgba(255,100,100,0.4); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+.quiz-submit { width:100%; background:linear-gradient(135deg,rgba(160,100,255,0.25),rgba(200,80,140,0.2));
+  border:1px solid rgba(200,160,255,0.25); color:rgba(220,200,255,0.85); padding:13px;
+  border-radius:12px; font-family:'Playfair Display',serif; font-size:16px; font-style:italic;
+  cursor:pointer; transition:all .25s; letter-spacing:.5px; }
+.quiz-submit:hover { background:linear-gradient(135deg,rgba(160,100,255,0.4),rgba(200,80,140,0.3));
+  border-color:rgba(200,160,255,0.45); box-shadow:0 4px 20px rgba(160,100,255,0.2); }
+.quiz-feedback { min-height:22px; font-family:'Caveat',cursive; font-size:15px; margin-top:12px; transition:all .3s; }
+.quiz-feedback.wrong { color:rgba(255,140,140,0.8); }
+.quiz-feedback.hint  { color:rgba(200,180,255,0.5); font-size:13px; }
+.quiz-close { position:absolute; top:14px; right:18px; background:transparent; border:none;
+  color:rgba(200,180,255,0.25); font-size:22px; cursor:pointer; transition:color .2s;
+  line-height:1; font-family:sans-serif; }
+.quiz-close:hover { color:rgba(200,180,255,0.6); }
+
+/* ── REVEAL MODAL ── */
+#reveal-overlay { position:fixed; inset:0; z-index:200;
+  opacity:0; pointer-events:none; transition:opacity .6s;
+  background:#030108; overflow:hidden; }
+#reveal-overlay.show { opacity:1; pointer-events:all; }
+#sky-reveal-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+#reveal-scroll { position:relative; z-index:2; width:100%; height:100%;
+  overflow-y:auto; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:20px 20px 44px; }
+#reveal-content { width:100%; max-width:440px; display:flex; flex-direction:column;
+  align-items:center; gap:14px; text-align:center;
+  animation:revealFadeUp .8s .2s ease both; }
+@keyframes revealFadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+#reveal-sky-label { font-family:'Caveat',cursive; font-size:13px; letter-spacing:2.5px;
+  color:rgba(170,150,255,0.5); text-transform:uppercase; }
+#reveal-photo-card { width:100%; max-width:340px; border-radius:14px; overflow:hidden;
+  box-shadow:0 12px 50px rgba(0,0,0,0.8),0 0 0 1px rgba(200,160,255,0.12),
+             0 0 40px rgba(120,80,200,0.2);
+  animation:floatCard 5s ease-in-out infinite; }
+@keyframes floatCard { 0%,100%{transform:translateY(0) rotate(-0.5deg)} 50%{transform:translateY(-10px) rotate(0.5deg)} }
+#reveal-photo-img { width:100%; display:block; object-fit:cover; max-height:280px; }
+.reveal-event { font-size:28px; font-style:italic; color:#f0e0ff;
+  text-shadow:0 0 30px rgba(200,140,255,0.6); line-height:1.2; }
+.reveal-date { font-family:'Caveat',cursive; font-size:15px; letter-spacing:2px; color:rgba(200,180,255,0.5); }
+.reveal-caption { font-family:'Caveat',cursive; font-size:19px; color:rgba(240,220,255,0.75); }
+.reveal-particles { position:absolute; inset:0; pointer-events:none; z-index:1; }
+.reveal-btn-back { background:rgba(255,255,255,0.06); border:1px solid rgba(200,160,255,0.2);
+  color:rgba(200,180,255,0.7); padding:11px 28px; border-radius:50px;
+  font-family:'Playfair Display',serif; font-size:14px; cursor:pointer;
+  transition:all .2s; margin-top:6px; }
+.reveal-btn-back:hover { border-color:rgba(200,160,255,0.5); color:rgba(200,180,255,1); }
+
+@media(max-width:480px){
+  .header h1{font-size:30px}
+  #grid{grid-template-columns:repeat(2,1fr)}
+  #quiz-box{padding:28px 20px}
+  .quiz-question{font-size:19px}
+  .reveal-event{font-size:22px}
+  #reveal-photo-card{max-width:290px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+
+<div id="main">
+  <div class="header">
+    <span class="header-icon">🌹</span>
+    <h1>Você se Lembra?</h1>
+    <p>uma viagem pelas nossas memórias</p>
+  </div>
+  <div class="counter">
+    💕 &nbsp; <span id="unlocked-count">0</span> de <span id="total-count">0</span> memórias reveladas
+  </div>
+  <div class="select-wrap">
+    <select id="dateSelect">
+      <option value="">✦ Escolha uma data especial... ✦</option>
+    </select>
+  </div>
+  <div class="memories-title" id="grid-title">✦ &nbsp; Memórias Reveladas &nbsp; ✦</div>
+  <div id="grid"></div>
+</div>
+
+<!-- Quiz Modal -->
+<div id="quiz-overlay">
+  <div id="quiz-box">
+    <button class="quiz-close" onclick="closeQuiz()">✕</button>
+    <div class="quiz-date-badge">✦ &nbsp;<span id="quiz-date-text"></span>&nbsp; ✦</div>
+    <div class="quiz-question" id="quiz-question"></div>
+    <input type="text" id="quiz-input" placeholder="sua resposta..." autocomplete="off"/>
+    <button class="quiz-submit" onclick="checkAnswer()">Revelar &nbsp; ✦</button>
+    <div class="quiz-feedback" id="quiz-feedback"></div>
+  </div>
+</div>
+
+<!-- Reveal Modal — céu astronômico + foto -->
+<div id="reveal-overlay">
+  <canvas id="sky-reveal-canvas"></canvas>
+  <div class="reveal-particles" id="reveal-particles"></div>
+  <div id="reveal-scroll">
+    <div id="reveal-content">
+      <div id="reveal-sky-label">✦ O Céu em <span id="reveal-sky-date-span"></span> ✦</div>
+      <div id="reveal-photo-card">
+        <img id="reveal-photo-img" src="" alt=""/>
+      </div>
+      <div class="reveal-event"  id="reveal-event"></div>
+      <div class="reveal-date"   id="reveal-date"></div>
+      <div class="reveal-caption" id="reveal-caption"></div>
+      <button class="reveal-btn-back" onclick="closeReveal()">← Mais memórias</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  MEMÓRIAS
+// ══════════════════════════════════════════════════════════════
+const MEMORIES = [
+  {id:'onde-tudo',date:'18/10/2024',iso:'2024-10-18',label:'18 de Outubro de 2024',
+   event:'Onde Tudo Começou',question:'Em que lugar especial nasceu a nossa história? 🌹',
+   answers:['onde tudo','tudo começou','começo','começou','conhecemos','começamos','historia','passeio', 'onde tudo começou'],
+   hint:'Dica: foi o lugar onde tudo entre nós dois começou...',
+   photo:'onde-tudo-comecou_18-10-2024.jpeg',caption:'O início da nossa história ♡'},
+  {
+    id:'primeiro-encontro',date:'30/10/2024',iso:'2024-10-30',label:'30 de Outubro de 2024',
+   event:'Primeiro Encontro',question:'O que de especial aconteceu neste dia? 💕',
+   answers:['encontro','encontramos','nos vimos','primeiro encontro','saímos','saimos','combinamos'],
+   hint:'Dica: foi a primeira vez que a gente saiu juntos...',
+   photo:'primeiro_encontro-30_10_2024.jpeg',caption:'Nosso primeiro encontro ♡'},
+  {id:'cinema',date:'02/11/2024',iso:'2024-11-02',label:'2 de Novembro de 2024',
+   event:'Primeira Ida ao Cinema',question:'Para onde fomos no nosso primeiro programa juntos? 🎬',
+   answers:['cinema','filme','assistimos','pipoca','sessão','sessao'],
+   hint:'Dica: comemos pipoca e assistimos a um filme...',
+   photo:'primeira_ida_ao_cinema-02_11_2024.jpeg',caption:'Nossa primeira sessão juntos ♡'},
+  {id:'aula',date:'03/12/2024',iso:'2024-12-03',label:'3 de Dezembro de 2024',
+   event:'Último Dia de Aula',question:'O que teve de especial neste dia? 📚',
+   answers:['aula','último','ultimo','escola','aulas','encerramento','termino','fim'],
+   hint:'Dica: foi o encerramento de um semestre...',
+   photo:'ultimo-dia-de-aula_03-12-2024.jpeg',caption:'O fim de um ciclo, juntos ♡'},
+  {id:'namoro',date:'18/01/2025',iso:'2025-01-18',label:'18 de Janeiro de 2025',
+   event:'Pedido de Namoro',question:'O que aconteceu neste dia que mudou tudo? 💍',
+   answers:['namoro','namorado','namorada','pedido','pediu','oficial','ficamos','casal'],
+   hint:'Dica: foi o dia em que nos tornamos oficiais...',
+   photo:'pedido-de-namoro_18-01-2025.jpeg',caption:'O dia que nos tornamos um casal ♡'},
+  {id:'praia',date:'02/03/2025',iso:'2025-03-02',label:'2 de Março de 2025',
+   event:'Primeira Vez na Praia Juntos',question:'Qual foi o nosso primeiro passeio na natureza? 🌊',
+   answers:['praia','mar','areia','litoral','costa'],
+   hint:'Dica: tem areia, sol e água salgada...',
+   photo:'primeira-vez-na-praia-juntos_02-03-2025.jpeg',caption:'Nosso primeiro dia de praia juntos ♡'},
+  {id:'julina',date:'01/06/2025',iso:'2025-06-01',label:'1 de Junho de 2025',
+   event:'Primeira Festa Junina Juntos',question:'Que festa especial comemoramos juntos pela primeira vez? 🎊',
+   answers:['julina','junina','são joão','sao joao','arraial','forró','forro','festa junina','festa julina'],
+   hint:'Dica: tem forró, bandeirinhas e comida típica...',
+   photo:'primeira-festa-julina-juntos_01-06-2025.jpeg',caption:'Nossa primeira festa junina juntos ♡'},
+  {id:'namorados',date:'12/06/2025',iso:'2025-06-12',label:'12 de Junho de 2025',
+   event:'Primeiro Dia dos Namorados',question:'Qual foi a data especial que comemoramos como casal pela primeira vez? 💑',
+   answers:['namorados','dia dos namorados','namorado','valentines','amor','casal'],
+   hint:'Dica: é uma data especial do calendário para os apaixonados...',
+   photo:'primeiro-dia-dos-namorados_12-06-2025.jpeg',caption:'Nosso primeiro Dia dos Namorados ♡'},
+  {id:'stranger',date:'22/06/2025',iso:'2025-06-22',label:'22 de Junho de 2025',
+   event:'Exposição Stranger Things',question:'Que exposição temática especial visitamos juntos? 🎭',
+   answers:['stranger','things','stranger things','upside down','hawkins','netflix','serie'],
+   hint:'Dica: é de uma série muito famosa da Netflix...',
+   photo:'exposição-stranger-things_22-06-2025.jpeg',caption:'Uma aventura no Mundo Invertido ♡'},
+  {id:'zoo',date:'27/07/2025',iso:'2025-07-27',label:'27 de Julho de 2025',
+   event:'Primeira Vez no Zoológico Juntos',question:'Onde fomos ver animais pela primeira vez juntos? 🦁',
+   answers:['zoológico','zoologico','zoo','animais','bichos'],
+   hint:'Dica: é um lugar com animais de todo o mundo...',
+   photo:'primeira-vez-no-zoologiocs-juntos_27-07-2025.jpeg',caption:'Nossa visita ao reino animal ♡'},
+  {id:'18anos',date:'24/12/2025',iso:'2025-12-24',label:'24 de Dezembro de 2025',
+   event:'Seus 18 Anos',question:'O que comemoramos nesta véspera de natal? 🎂',
+   answers:['18','dezoito','aniversário','aniversario','anos','parabéns','aniversaria'],
+   hint:'Dica: foi um aniversário muito especial dela...',
+   photo:'seus-18-anos_24-12-2025.jpeg',caption:'Os 18 anos mais especiais ♡'},
+  {id:'viagem2',date:'23/01/2026',iso:'2026-01-23',label:'23 de Janeiro de 2026',
+   event:'Segunda Viagem Juntos',question:'O que fizemos juntos neste começo de ano? ✈️',
+   answers:['viagem','viajamos','viajando','passeio','trip','viajar'],
+   hint:'Dica: fizemos as malas e partimos juntos...',
+   photo:'segunda-viagem-juntos_23-01-2026.jpeg',caption:'Mais uma aventura juntos ♡'},
+  {id:'cafeteria',date:'11/04/2026',iso:'2026-04-11',label:'11 de Abril de 2026',
+   event:'Na Cafeteria',question:'Onde estávamos neste dia especial? ☕',
+   answers:['cafeteria','café','cafe','coffee','lanchonete'],
+   hint:'Dica: um lugar aconchegante com café e conversas...',
+   photo:'na-cafeteria_11-04-2026.jpeg',caption:'Um momento nosso na cafeteria ♡'},
+  {id:'pixar',date:'23/04/2026',iso:'2026-04-23',label:'23 de Abril de 2026',
+   event:'Mundo Pixar',question:'Que mundo mágico exploramos juntos? 🎨',
+   answers:['pixar','mundo pixar','disney','animação','animacao'],
+   hint:'Dica: é de um estúdio de animação muito famoso...',
+   photo:'mundo-pixar_23-04-2026.jpeg',caption:'Explorando o Mundo Pixar juntos ♡'},
+  {id:'play',date:'31/05/2026',iso:'2026-05-31',label:'31 de Maio de 2026',
+   event:'No Play',question:'Onde fomos nos divertir neste dia? 🎮',
+   answers:['play','jogar','jogamos','games','fliperama','brincar','arcade'],
+   hint:'Dica: um lugar para jogar e se divertir...',
+   photo:'no-play_31-05-2026.jpeg',caption:'Um dia de diversão juntos ♡'},
+  {id:'formatura',date:'Data Especial',iso:'2025-07-01',label:'Nossa Formatura ✦',
+   event:'Nossa Formatura',question:'O que comemoramos todos juntos? 🎓',
+   answers:['formatura','formou','formados','colação','colacao','beca','diploma','formamos','formei'],
+   hint:'Dica: jogamos o chapéu para o alto...',
+   photo:'nossa-formatura.jpeg',caption:'Nossa formatura ♡'},
+  {id:'maracana',date:'Data Especial',iso:'2025-09-01',label:'Primeira Vez no Maracanã ✦',
+   event:'Primeira Vez no Maracanã',question:'Que estádio icônico visitamos pela primeira vez? ⚽',
+   answers:['maracanã','maracana','futebol','jogo','estádio','estadio','flamengo','fluminense','vasco','botafogo'],
+   hint:'Dica: é o maior estádio do Brasil...',
+   photo:'primeira-vez-no-maracana-juntos.jpeg',caption:'Nossa primeira vez no Maracanã ♡'},
+];
+
+MEMORIES.sort((a,b)=>a.iso.localeCompare(b.iso));
+const unlocked = new Set(JSON.parse(localStorage.getItem('unlocked')||'[]'));
+let currentMemory=null, wrongAttempts=0;
+
+function init(){
+  const sel=document.getElementById('dateSelect');
+  MEMORIES.forEach((m,i)=>{
+    const o=document.createElement('option'); o.value=i;
+    o.textContent=m.label+(unlocked.has(m.id)?' ✓':''); sel.appendChild(o);
+  });
+  document.getElementById('total-count').textContent=MEMORIES.length;
+  updateCounter(); renderGrid();
+}
+function updateCounter(){ document.getElementById('unlocked-count').textContent=unlocked.size; }
+function renderGrid(){
+  const grid=document.getElementById('grid'), title=document.getElementById('grid-title');
+  const items=MEMORIES.filter(m=>unlocked.has(m.id)); grid.innerHTML='';
+  if(!items.length){title.classList.remove('show');return;}
+  title.classList.add('show');
+  items.forEach(m=>{
+    const c=document.createElement('div'); c.className='mem-card';
+    c.innerHTML=`<img src="${m.photo}" alt="${m.event}" loading="lazy"/>
+      <div class="mem-card-info"><div class="mem-card-title">${m.event}</div>
+      <div class="mem-card-date">${m.date}</div></div>`;
+    c.onclick=()=>openReveal(m); grid.appendChild(c);
+  });
+}
+
+document.getElementById('dateSelect').addEventListener('change',function(){
+  const idx=parseInt(this.value); if(isNaN(idx))return; this.value='';
+  const mem=MEMORIES[idx];
+  if(unlocked.has(mem.id))openReveal(mem); else openQuiz(mem);
+});
+function openQuiz(mem){
+  currentMemory=mem; wrongAttempts=0;
+  document.getElementById('quiz-date-text').textContent=mem.label;
+  document.getElementById('quiz-question').textContent=mem.question;
+  document.getElementById('quiz-input').value='';
+  document.getElementById('quiz-feedback').textContent='';
+  document.getElementById('quiz-feedback').className='quiz-feedback';
+  document.getElementById('quiz-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('quiz-input').focus(),400);
+}
+function closeQuiz(){ document.getElementById('quiz-overlay').classList.remove('show'); currentMemory=null; }
+document.getElementById('quiz-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkAnswer();});
+function normalize(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\s]/g,''); }
+function checkAnswer(){
+  if(!currentMemory)return;
+  const inp=normalize(document.getElementById('quiz-input').value.trim()); if(!inp)return;
+  if(currentMemory.answers.some(a=>inp.includes(normalize(a)))){
+    closeQuiz();
+    setTimeout(()=>{
+      unlocked.add(currentMemory.id);
+      localStorage.setItem('unlocked',JSON.stringify([...unlocked]));
+      openReveal(currentMemory); updateCounter(); renderGrid();
+      document.querySelectorAll('#dateSelect option').forEach((o,i)=>{
+        if(MEMORIES[i]&&MEMORIES[i].id===currentMemory.id) o.textContent=MEMORIES[i].label+' ✓';
+      });
+    },200);
+  } else {
+    wrongAttempts++;
+    const el=document.getElementById('quiz-input'), fb=document.getElementById('quiz-feedback');
+    el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),450);
+    if(wrongAttempts>=2){fb.className='quiz-feedback hint';fb.textContent=currentMemory.hint;}
+    else{fb.className='quiz-feedback wrong';fb.textContent='Quase... pensa um pouco mais! 🌹';}
+  }
+}
+
+// ── REVEAL ──
+function openReveal(mem){
+  document.getElementById('reveal-photo-img').src=mem.photo;
+  document.getElementById('reveal-event').textContent=mem.event;
+  document.getElementById('reveal-date').textContent=mem.date==='Data Especial'?'✦ Data Especial ✦':'✦ '+mem.label+' ✦';
+  document.getElementById('reveal-caption').textContent=mem.caption;
+  document.getElementById('reveal-sky-date-span').textContent=mem.date==='Data Especial'?'uma noite especial':mem.label;
+  document.getElementById('reveal-overlay').classList.add('show');
+  requestAnimationFrame(()=>renderRevealSky(mem.iso));
+  spawnParticles();
+}
+function closeReveal(){ document.getElementById('reveal-overlay').classList.remove('show'); }
+
+function spawnParticles(){
+  const c=document.getElementById('reveal-particles'); c.innerHTML='';
+  const em=['💕','🌹','✨','🌸','💫','🎀','♡'];
+  for(let i=0;i<16;i++){
+    const p=document.createElement('div');
+    p.style.cssText=`position:absolute;left:${Math.random()*100}%;bottom:-20px;font-size:${12+Math.random()*14}px;animation:floatUp ${4+Math.random()*5}s ${Math.random()*2}s ease-out forwards;pointer-events:none;`;
+    p.textContent=em[Math.floor(Math.random()*em.length)]; c.appendChild(p);
+  }
+}
+const ps=document.createElement('style');
+ps.textContent=`@keyframes floatUp{0%{opacity:0;transform:translateY(0) rotate(0deg)}10%{opacity:.8}90%{opacity:.3}100%{opacity:0;transform:translateY(-80vh) rotate(360deg)}}`;
+document.head.appendChild(ps);
+
+// ══════════════════════════════════════════════════════════════
+//  MOTOR ASTRONÔMICO
+//  São Paulo: lat -23.55°, lon -46.63°, 22h local BRT (UTC-3)
+// ══════════════════════════════════════════════════════════════
+const SKY_LAT=-23.55, SKY_LON=-46.63, SKY_HOUR=22, SKY_UTC=-3;
+
+// [ra_horas, dec_graus, magnitude, cor_hex]
+const NAMED_STARS=[
+  // Orion [0-6]
+  [5.9195,  7.407, 0.42,'#ffb060'],[5.2432,-8.202, 0.13,'#c8e0ff'],
+  [5.4188,  6.350, 1.64,'#ddeeff'],[5.6036,-1.202, 1.70,'#ddeeff'],
+  [5.6791, -1.943, 1.74,'#ddeeff'],[5.5334,-0.299, 2.25,'#ddeeff'],
+  [5.7954, -9.670, 2.09,'#ddeeff'],
+  // Crux [7-10]
+  [12.4433,-63.099,0.77,'#c8e0ff'],[12.7953,-59.689,1.25,'#ddeeff'],
+  [12.5194,-57.113,1.63,'#ffb080'],[12.2526,-58.749,2.79,'#ddeeff'],
+  // Escorpião [11-17]
+  [16.4901,-26.432,1.06,'#ff7040'],[16.0913,-19.805,2.50,'#ddeeff'],
+  [16.0056,-22.622,2.32,'#ddeeff'],[17.5600,-37.104,1.62,'#ddeeff'],
+  [17.6222,-42.998,1.87,'#ffe0b0'],[17.7081,-39.030,2.41,'#ddeeff'],
+  [16.3567,-28.216,2.82,'#ddeeff'],
+  // Cão Maior [18-22]
+  [6.7526,-16.716,-1.46,'#d0ecff'],[6.9775,-28.972,1.50,'#ddeeff'],
+  [7.1398,-26.393, 1.84,'#ffe0b0'],[7.4018,-29.303,2.45,'#ddeeff'],
+  [6.3784,-17.956, 1.98,'#ddeeff'],
+  // Centauro [23-26]
+  [14.6597,-60.834,-0.01,'#ffe8a0'],[14.0637,-60.373,0.60,'#c8e0ff'],
+  [14.1114,-36.370, 2.06,'#ffe8a0'],[13.8254,-42.474,3.04,'#ddeeff'],
+  // Leão [27-31]
+  [10.1395,11.967,1.36,'#ddeeff'],[11.8176,14.572,2.14,'#ddeeff'],
+  [10.3328,19.842,2.01,'#ffe8a0'],[11.2352,20.524,2.56,'#ddeeff'],
+  [10.1229,16.763,3.49,'#ddeeff'],
+  // Virgem [32-35]
+  [13.4199,-11.161,0.98,'#c8e0ff'],[12.6941,-1.449,2.74,'#ddeeff'],
+  [12.9274,  3.397,3.38,'#ddeeff'],[12.4633,-0.668,3.38,'#ddeeff'],
+  // Gêmeos [36-39]
+  [7.7553,28.026,1.16,'#ffe8a0'],[7.5768,31.888,1.58,'#ddeeff'],
+  [6.6286,16.399,1.93,'#ddeeff'],[7.3355,21.982,3.53,'#ddeeff'],
+  // Extras brilhantes [40-49]
+  [6.3992,-52.696,-0.72,'#ffe8a0'],[1.6286,-57.237,0.46,'#c8e0ff'],
+  [7.6553,  5.225, 0.38,'#fff0d0'],[4.5988, 16.509,0.87,'#ff9050'],
+  [18.6157,38.784, 0.03,'#d0f0ff'],[5.2782, 45.998,0.08,'#ffe8a0'],
+  [14.2610,19.182,-0.05,'#ffb060'],[9.2849,-59.275,1.86,'#ffe0a0'],
+  [22.9609,-29.622,1.16,'#d0ecff'],[19.8464, 8.868,0.77,'#ddeeff'],
+];
+
+const CONST_LINES=[
+  [0,2],[2,5],[5,3],[3,4],[4,0],[1,5],[6,4], // Orion
+  [7,9],[8,10],                               // Crux
+  [12,13],[12,11],[13,11],[11,17],[17,14],[14,15],[15,16], // Escorpião
+  [22,18],[18,19],[19,20],[20,21],             // Cão Maior
+  [23,24],[24,25],[25,26],[23,25],             // Centauro
+  [27,31],[31,29],[29,30],[30,28],[27,29],     // Leão
+  [32,33],[33,34],[33,35],                    // Virgem
+  [37,36],[36,38],[38,39],[37,39],            // Gêmeos
+];
+
+// estrelas de fundo — RA/Dec pseudo-aleatórios, projeção correta
+const BG_STARS=(()=>{
+  let s=0xdeadbeef|0;
+  const r=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296;};
+  return Array.from({length:550},()=>[r()*24,r()*180-90,r()*.7+.15,r()*.35+.12]);
+})();
+
+function skyToJD(Y,M,D,uh){
+  let y=Y,mo=M; if(mo<=2){y--;mo+=12;}
+  const A=Math.floor(y/100),B=2-A+Math.floor(A/4);
+  return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(mo+1))+D+B-1524.5+uh/24;
+}
+function skyGST(jd){ return((280.46061837+360.98564736629*(jd-2451545))%360+360)%360; }
+function skyAltAz(ra,dec,lst,lat){
+  const H=(lst-ra*15)*Math.PI/180,d=dec*Math.PI/180,l=lat*Math.PI/180;
+  const sa=Math.sin(d)*Math.sin(l)+Math.cos(d)*Math.cos(l)*Math.cos(H);
+  const alt=Math.asin(Math.max(-1,Math.min(1,sa)));
+  const caz=(Math.sin(d)-Math.sin(alt)*Math.sin(l))/(Math.cos(alt)*Math.cos(l));
+  let az=Math.acos(Math.max(-1,Math.min(1,caz)));
+  if(Math.sin(H)>0)az=2*Math.PI-az;
+  return{alt:alt*180/Math.PI,az:az*180/Math.PI};
+}
+function skyProj(alt,az,cx,cy,R){
+  const a=alt*Math.PI/180,r=R*Math.cos(a)/(1+Math.sin(a)),z=az*Math.PI/180;
+  return{x:cx+r*Math.sin(z),y:cy-r*Math.cos(z)};
+}
+
+function renderRevealSky(iso){
+  const canvas=document.getElementById('sky-reveal-canvas');
+  const W=canvas.width=window.innerWidth, H=canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const CX=W/2, CY=H/2, R=Math.min(W,H)*.84;
+
+  const[year,month,day]=iso.split('-').map(Number);
+  const jd=skyToJD(year,month,day,SKY_HOUR+Math.abs(SKY_UTC)); // 22+3=25
+  const lst=((skyGST(jd)+SKY_LON)%360+360)%360;
+
+  ctx.fillStyle='#030108'; ctx.fillRect(0,0,W,H);
+
+  // névoa cósmica
+  [[.25,.35,.40,[55,12,120,.08]],[.75,.60,.34,[18,10,90,.06]],
+   [.50,.15,.26,[90,15,80,.05]],[.50,.88,.28,[30,5,70,.04]]
+  ].forEach(([fx,fy,fr,c])=>{
+    const g=ctx.createRadialGradient(fx*W,fy*H,0,fx*W,fy*H,fr*Math.max(W,H));
+    g.addColorStop(0,`rgba(${c})`); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  });
+
+  // estrelas de fundo
+  BG_STARS.forEach(([ra,dec,r,a])=>{
+    const p=skyAltAz(ra,dec,lst,SKY_LAT); if(p.alt<1)return;
+    const{x,y}=skyProj(p.alt,p.az,CX,CY,R);
+    if(x<-8||x>W+8||y<-8||y>H+8)return;
+    ctx.beginPath(); ctx.arc(x,y,r,0,2*Math.PI);
+    ctx.fillStyle=`rgba(190,205,255,${a})`; ctx.fill();
+  });
+
+  // linhas de constelações
+  ctx.lineWidth=.8;
+  CONST_LINES.forEach(([i,j])=>{
+    const[ra1,dec1]=NAMED_STARS[i],[ra2,dec2]=NAMED_STARS[j];
+    const p1=skyAltAz(ra1,dec1,lst,SKY_LAT),p2=skyAltAz(ra2,dec2,lst,SKY_LAT);
+    if(p1.alt<0||p2.alt<0)return;
+    const a1=skyProj(p1.alt,p1.az,CX,CY,R),a2=skyProj(p2.alt,p2.az,CX,CY,R);
+    ctx.beginPath(); ctx.moveTo(a1.x,a1.y); ctx.lineTo(a2.x,a2.y);
+    ctx.strokeStyle='rgba(170,140,255,0.25)'; ctx.stroke();
+  });
+
+  // estrelas nomeadas
+  NAMED_STARS.forEach(([ra,dec,mag,col])=>{
+    const p=skyAltAz(ra,dec,lst,SKY_LAT); if(p.alt<0)return;
+    const{x,y}=skyProj(p.alt,p.az,CX,CY,R);
+    if(x<-8||x>W+8||y<-8||y>H+8)return;
+    const r=mag<0?4.2:mag<1?3.2:mag<2?2.2:mag<3?1.5:1.0;
+    if(mag<1.5){
+      const gv=ctx.createRadialGradient(x,y,0,x,y,r*5);
+      const al=(1.5-Math.max(mag,-1))/2.5*.18;
+      gv.addColorStop(0,`rgba(200,220,255,${al})`); gv.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=gv; ctx.beginPath(); ctx.arc(x,y,r*5,0,2*Math.PI); ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(x,y,r,0,2*Math.PI); ctx.fillStyle=col; ctx.fill();
+  });
+
+  // vinheta
+  const vig=ctx.createRadialGradient(CX,CY,R*.5,CX,CY,R*1.1);
+  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(2,0,8,.72)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
+}
+
+// ── FUNDO DE ESTRELAS (tela principal) ──
+(function(){
+  const c=document.getElementById('stars-canvas'),ctx=c.getContext('2d');
+  let W,H;
+  const stars=Array.from({length:280},()=>({ax:Math.random(),ay:Math.random(),r:Math.random()*1.2+.2,
+    phase:Math.random()*Math.PI*2,spd:.004+Math.random()*.012,warm:Math.random()>.8}));
+  let shoots=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
+  window.addEventListener('resize',resize); resize();
+  function draw(){
+    requestAnimationFrame(draw);
+    ctx.fillStyle='#06030f'; ctx.fillRect(0,0,W,H);
+    [{x:.3,y:.4,r:220,c:'rgba(55,18,120,0.06)'},{x:.72,y:.65,r:190,c:'rgba(18,35,100,0.05)'}].forEach(n=>{
+      const g=ctx.createRadialGradient(n.x*W,n.y*H,0,n.x*W,n.y*H,n.r);
+      g.addColorStop(0,n.c);g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    });
+    stars.forEach(s=>{
+      s.phase+=s.spd;const a=.15+.55*Math.abs(Math.sin(s.phase));
+      ctx.beginPath();ctx.arc(s.ax*W,s.ay*H,s.r,0,2*Math.PI);
+      ctx.fillStyle=s.warm?`rgba(255,225,195,${a*.65})`:`rgba(200,208,255,${a*.55})`;ctx.fill();
+    });
+    if(Math.random()<.003)shoots.push({x:Math.random()*W,y:Math.random()*H*.5,len:50+Math.random()*70,spd:7+Math.random()*5,a:1});
+    shoots=shoots.filter(s=>s.a>0);
+    shoots.forEach(s=>{
+      const g=ctx.createLinearGradient(s.x,s.y,s.x-s.len,s.y+s.len*.4);
+      g.addColorStop(0,`rgba(255,240,255,${s.a})`);g.addColorStop(1,'transparent');
+      ctx.strokeStyle=g;ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-s.len,s.y+s.len*.4);ctx.stroke();
+      s.x-=s.spd;s.y+=s.spd*.4;s.a-=.018;
+    });
+  }
+  draw();
+})();
+
+init();
+</script>
+</body>
+</html>
